@@ -1,27 +1,36 @@
-name: Enforce Task Link Requirement from PR Comments
-
+name: Check for Task Link in Comments
+ 
 on:
   pull_request:
-    types: [opened, edited, reopened, synchronize]
-
+    types: [opened, edited, reopened]
+ 
 jobs:
-  validate-task-link:
+  check-task-link:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch PR Comments
+      - name: Checkout repository
+        uses: actions/checkout@v3
+ 
+      - name: Get pull request comments
+        uses: actions/github-script@v6
         id: fetch_comments
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            return comments.data;
+ 
+      - name: Check if task link is present in comments
+        id: check_task_link
         run: |
-          PR_NUMBER=${{ github.event.number }}
-          COMMENTS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-          "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/comments")
-          echo "PR_COMMENTS=$COMMENTS" >> $GITHUB_ENV
-
-      - name: Validate Task Link in Comments
-        run: |
-          echo "$PR_COMMENTS" | grep -q "https://wesfarmersnz.atlassian.net/browse/"
-          if [ $? -ne 0 ]; then
-            echo "Error: No comment contains a mandatory task link."
-            exit 1
+          echo "Checking comments for task links..."
+          echo ${{steps.fetch_comments.outputs.result}}
+          if [[ $(echo "${{ steps.fetch_comments.outputs.result }}" | grep -Eo 'https://wesfarmersnz.atlassian.net/browse/[A-Z]+-[0-9]+') ]]; then
+            echo "Task link found."
+          else
+            echo "No task link found."
+            exit 1  # Fail the job if no task link is found
           fi
