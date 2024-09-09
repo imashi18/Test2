@@ -1,10 +1,3 @@
-## Task Attachment
-<!--
-MANDATORY: Include a link to the related task or issue. MRs without a task link will not be reviewed.
-Example: [Jira Task #1234](https://your-jira-instance.atlassian.net/browse/TASK-1234)
--->
-
-**Task Link**: [Jira Task Link](<Insert your link here>)
 
 ## What is the type of this PR?
 
